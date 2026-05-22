@@ -234,6 +234,12 @@
         font-family: var(--sans-font);
       }
 
+      .btn:disabled {
+        opacity: 0.45;
+        cursor: not-allowed;
+        pointer-events: none;
+      }
+
       .btn-primary {
         background-color: var(--color-weight);
         color: #fff;
@@ -1096,6 +1102,46 @@
         color: var(--text-muted);
       }
 
+      /* Sync Queue Indicator (in header) */
+      .sync-queue-indicator {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--text-secondary);
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: var(--border-radius-full);
+        padding: 5px 12px;
+        transition: all 0.3s ease;
+      }
+
+      .sync-queue-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        flex-shrink: 0;
+        background: var(--text-muted);
+        transition: background 0.3s ease;
+      }
+
+      .sync-queue-dot.syncing {
+        background: #f59e0b;
+        box-shadow: 0 0 6px rgba(245, 158, 11, 0.6);
+        animation: pulse-dot 1.2s ease-in-out infinite;
+      }
+
+      .sync-queue-dot.success {
+        background: #10b981;
+        box-shadow: 0 0 6px rgba(16, 185, 129, 0.5);
+      }
+
+      @keyframes pulse-dot {
+        0%, 100% { opacity: 1; transform: scale(1); }
+        50% { opacity: 0.5; transform: scale(0.8); }
+      }
+
       .settings-input-sm {
         width: 90px;
         background-color: var(--bg-primary);
@@ -1123,6 +1169,10 @@
       <header class="app-header">
         <div class="app-title-group">
           <h1 id="header-title" class="app-title">Food Consumption</h1>
+        </div>
+        <div id="sync-queue-indicator" class="sync-queue-indicator" style="display:none;">
+          <span id="sync-queue-dot" class="sync-queue-dot"></span>
+          <span id="sync-queue-label">Syncing...</span>
         </div>
       </header>
       
@@ -1238,11 +1288,7 @@
 
               <div id="chart-legend-root" class="chart-legend" style="display: none;">
                 <div class="legend-item">
-                  <span class="legend-dot weight-raw"></span>
-                  <span>Logged Weight</span>
-                </div>
-                <div class="legend-item">
-                  <span class="legend-dot weight-avg"></span>
+                  <span class="legend-dot weight-avg" style="background-color: var(--color-weight);"></span>
                   <span id="legend-avg-label">5-Day Rolling Avg</span>
                 </div>
               </div>
@@ -1439,7 +1485,7 @@
                   <span class="settings-row-title">Apps Script Web App URL</span>
                   <span class="settings-row-desc">Paste your deployed Apps Script URL here</span>
                 </div>
-                <input type="url" id="setting-sync-url" class="form-input" style="font-size: 13px; padding: 10px 12px;" placeholder="https://script.google.com/macros/s/.../exec" onchange="updateSyncUrl(this.value)" />
+                <input type="url" id="setting-sync-url" class="form-input" style="font-size: 13px; padding: 10px 12px;" placeholder="https://script.google.com/macros/s/.../exec" oninput="updateSyncUrl(this.value, true)" />
               </div>
 
               <div class="settings-row">
@@ -1548,7 +1594,7 @@
       <div id="modal-weight" class="modal-overlay" onclick="closeWeightModal()">
         <div class="modal-content" onclick="event.stopPropagation()">
           <div class="modal-header">
-            <h3 class="modal-title">Log Weight Entry</h3>
+            <h3 class="modal-title" id="weight-modal-title">Log Weight Entry</h3>
             <button class="modal-close-btn" onclick="closeWeightModal()">✕</button>
           </div>
           
@@ -1563,7 +1609,7 @@
               <input type="date" id="weight-input-date" class="form-input" required />
             </div>
 
-            <button type="submit" class="btn btn-primary" style="margin-top: 8px;">
+            <button type="submit" id="weight-submit-btn" class="btn btn-primary" style="margin-top: 8px;">
               Save Entry
             </button>
           </form>
@@ -1636,6 +1682,7 @@
         foodEntries: [],
         weightEntries: [],
         workoutEntries: [],
+        pendingChanges: 0,
         workoutGoals: {
           Chest: 2,
           Bicep: 2,
@@ -1652,6 +1699,7 @@
         chartRange: '1M',
         selectedWeightIndex: null,
         editingFoodId: null,
+        editingWeightId: null,
         editingWorkoutId: null,
         syncUrl: ''
       };
@@ -1727,9 +1775,9 @@
 
       const renderPillRing = (value, goal, unit, color, tintColor, width) => {
         const percent = Math.min(value / goal, 1);
-        const height = 28;
-        const rOuter = 13;
-        const rInner = 10.5;
+        const height = 36;
+        const rOuter = 17;
+        const rInner = 14;
         const hasHit = value >= goal;
         
         const offset = 100 - percent * 100;
@@ -1743,18 +1791,18 @@
           <svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" style="overflow: visible; display: block;">
             <!-- Outer progress track -->
             <rect x="1" y="1" width="${width - 2}" height="${height - 2}" rx="${rOuter}" ry="${rOuter}" 
-                  fill="none" stroke="rgba(255, 255, 255, 0.05)" stroke-width="1.2" />
+                  fill="none" stroke="rgba(255, 255, 255, 0.05)" stroke-width="1.5" />
             <!-- Outer progress bar -->
             <rect x="1" y="1" width="${width - 2}" height="${height - 2}" rx="${rOuter}" ry="${rOuter}" 
-                  fill="none" stroke="${color}" stroke-width="1.2" stroke-linecap="round"
+                  fill="none" stroke="${color}" stroke-width="1.5" stroke-linecap="round"
                   pathLength="100" stroke-dasharray="100" stroke-dashoffset="${offset}" 
                   style="transition: stroke-dashoffset 0.4s ease;" />
             <!-- Inner pill -->
-            <rect x="3.5" y="3.5" width="${width - 7}" height="${height - 7}" rx="${rInner}" ry="${rInner}" 
+            <rect x="4" y="4" width="${width - 8}" height="${height - 8}" rx="${rInner}" ry="${rInner}" 
                   fill="${pillFill}" style="transition: fill 0.3s ease;" />
             <!-- Inner text -->
             <text x="50%" y="50%" dominant-baseline="central" text-anchor="middle" 
-                  fill="${textColor}" font-size="10.5" font-weight="700" 
+                  fill="${textColor}" font-size="13" font-weight="700" 
                   style="font-family: var(--sans-font); transition: fill 0.3s ease;">${textContent}</text>
           </svg>
         `;
@@ -1877,8 +1925,27 @@
         document.getElementById('food-input-protein').value = '';
       };
 
-      const openWeightModal = () => {
-        document.getElementById('weight-input-date').value = getLocalDateString();
+      const openWeightModal = (editId = null) => {
+        const titleEl = document.getElementById('weight-modal-title');
+        const submitEl = document.getElementById('weight-submit-btn');
+
+        if (editId && typeof editId === 'string') {
+          const entry = state.weightEntries.find(e => e.id === editId);
+          if (entry) {
+            state.editingWeightId = editId;
+            document.getElementById('weight-input-value').value = entry.weight;
+            document.getElementById('weight-input-date').value = entry.date;
+            if (titleEl) titleEl.innerText = 'Edit Weight Entry';
+            if (submitEl) submitEl.innerText = 'Save Changes';
+          }
+        } else {
+          state.editingWeightId = null;
+          document.getElementById('weight-input-value').value = '';
+          document.getElementById('weight-input-date').value = getLocalDateString();
+          if (titleEl) titleEl.innerText = 'Log Weight Entry';
+          if (submitEl) submitEl.innerText = 'Save Entry';
+        }
+
         document.getElementById('modal-weight').classList.add('active');
         document.getElementById('weight-input-value').focus();
       };
@@ -1886,6 +1953,11 @@
       const closeWeightModal = () => {
         document.getElementById('modal-weight').classList.remove('active');
         document.getElementById('weight-input-value').value = '';
+        state.editingWeightId = null;
+        const titleEl = document.getElementById('weight-modal-title');
+        const submitEl = document.getElementById('weight-submit-btn');
+        if (titleEl) titleEl.innerText = 'Log Weight Entry';
+        if (submitEl) submitEl.innerText = 'Save Entry';
       };
 
       // --- Submissions ---
@@ -1926,16 +1998,33 @@
         const weight = parseFloat(document.getElementById('weight-input-value').value) || 0;
         const date = document.getElementById('weight-input-date').value;
 
-        const newEntry = {
-          id: Date.now().toString(),
-          weight,
-          date,
-          timestamp: Date.now()
-        };
-
-        // If duplicate date exists, replace it
-        state.weightEntries = state.weightEntries.filter(w => w.date !== date);
-        state.weightEntries.push(newEntry);
+        if (state.editingWeightId) {
+          // Edit existing entry in-place (preserve ID and timestamp)
+          const idx = state.weightEntries.findIndex(w => w.id === state.editingWeightId);
+          if (idx !== -1) {
+            // If user changed the date, remove any other entry with the new date first
+            const oldDate = state.weightEntries[idx].date;
+            if (oldDate !== date) {
+              state.weightEntries = state.weightEntries.filter(w => w.date !== date || w.id === state.editingWeightId);
+            }
+            state.weightEntries[state.weightEntries.findIndex(w => w.id === state.editingWeightId)] = {
+              ...state.weightEntries.find(w => w.id === state.editingWeightId),
+              weight,
+              date
+            };
+          }
+          state.editingWeightId = null;
+        } else {
+          const newEntry = {
+            id: Date.now().toString(),
+            weight,
+            date,
+            timestamp: Date.now()
+          };
+          // If duplicate date exists, replace it
+          state.weightEntries = state.weightEntries.filter(w => w.date !== date);
+          state.weightEntries.push(newEntry);
+        }
 
         saveStateToStorage();
         closeWeightModal();
@@ -1994,12 +2083,17 @@
       };
 
       // --- Cloud Sync Operations ---
-      const updateSyncUrl = (val) => {
+      let autoPullTimeout = null;
+      const updateSyncUrl = (val, triggerPull = true) => {
         state.syncUrl = val.trim();
         saveStateToStorage(false); // Don't trigger push when updating URL
         updateSyncUI();
-        if (state.syncUrl) {
-          syncWithCloud('pull');
+        
+        clearTimeout(autoPullTimeout);
+        if (triggerPull && state.syncUrl && state.syncUrl.includes('/exec')) {
+          autoPullTimeout = setTimeout(() => {
+            syncWithCloud('pull');
+          }, 800);
         }
       };
 
@@ -2071,8 +2165,29 @@
             // Merge functions (merging remote and local items by unique id)
             const mergeLists = (local, remote) => {
               const map = new Map();
-              local.forEach(e => map.set(e.id, e));
-              remote.forEach(e => map.set(e.id, e));
+              
+              const normalize = (entry) => {
+                if (!entry) return null;
+                const normalized = { ...entry };
+                if (normalized.id !== undefined && normalized.id !== null) {
+                  normalized.id = String(normalized.id);
+                }
+                if (normalized.date && typeof normalized.date === 'string') {
+                  if (normalized.date.includes('T')) {
+                    normalized.date = normalized.date.split('T')[0];
+                  }
+                }
+                return normalized;
+              };
+
+              local.forEach(e => {
+                const norm = normalize(e);
+                if (norm && norm.id) map.set(norm.id, norm);
+              });
+              remote.forEach(e => {
+                const norm = normalize(e);
+                if (norm && norm.id) map.set(norm.id, norm);
+              });
               return Array.from(map.values());
             };
 
@@ -2123,16 +2238,26 @@
             if (result && !result.success) throw new Error(result.error || 'Server error during push');
 
             updateSyncUI('success');
+            // Clear pending queue — all changes pushed
+            state.pendingChanges = 0;
+            updateSyncQueueIndicator();
           }
         } catch (err) {
           console.error("Cloud Sync Error:", err);
           updateSyncUI('error', err.message);
+          // On error, still clear the queue so it doesn't stay stuck
+          state.pendingChanges = 0;
+          updateSyncQueueIndicator();
         }
       };
 
       let syncDebounceTimeout = null;
       const triggerAutoPush = () => {
         if (!state.syncUrl) return;
+
+        // Increment pending changes counter
+        state.pendingChanges = (state.pendingChanges || 0) + 1;
+        updateSyncQueueIndicator();
 
         const badge = document.getElementById('sync-status-badge');
         if (badge) {
@@ -2144,6 +2269,37 @@
         syncDebounceTimeout = setTimeout(() => {
           syncWithCloud('push');
         }, 2000);
+      };
+
+      const updateSyncQueueIndicator = () => {
+        const indicator = document.getElementById('sync-queue-indicator');
+        const dot = document.getElementById('sync-queue-dot');
+        const label = document.getElementById('sync-queue-label');
+        if (!indicator || !dot || !label) return;
+
+        const pending = state.pendingChanges || 0;
+        const isSyncing = pending > 0;
+
+        if (!state.syncUrl) {
+          indicator.style.display = 'none';
+          return;
+        }
+
+        if (isSyncing) {
+          indicator.style.display = 'flex';
+          dot.className = 'sync-queue-dot syncing';
+          const changeWord = pending === 1 ? 'change' : 'changes';
+          label.innerText = `${pending} ${changeWord} pending`;
+        } else {
+          // Briefly show success then hide
+          indicator.style.display = 'flex';
+          dot.className = 'sync-queue-dot success';
+          label.innerText = 'All synced';
+          setTimeout(() => {
+            indicator.style.display = 'none';
+            state.pendingChanges = 0;
+          }, 2500);
+        }
       };
 
       // --- Backup Operations ---
@@ -2361,8 +2517,8 @@
                   <span class="food-day-title">${formatDateLabel(dateStr)}</span>
                 </div>
                 <div class="group-summary" style="display: flex; gap: 8px; align-items: center;">
-                  ${renderPillRing(totals.calories, state.calorieGoal, 'kcal', 'var(--color-calories)', 'rgba(16, 185, 129, 0.08)', 105)}
-                  ${renderPillRing(totals.protein, state.proteinGoal, 'g', 'var(--color-protein)', 'rgba(245, 158, 11, 0.08)', 85)}
+                  ${renderPillRing(totals.calories, state.calorieGoal, 'kcal', 'var(--color-calories)', 'rgba(16, 185, 129, 0.08)', 125)}
+                  ${renderPillRing(totals.protein, state.proteinGoal, 'g', 'var(--color-protein)', 'rgba(245, 158, 11, 0.08)', 105)}
                 </div>
               </div>
               <div class="food-day-entries">
@@ -2437,6 +2593,8 @@
         const hasData = chartData.length >= 1;
         const hasLine = chartData.length >= 2;
 
+        let minY = 0, maxY = 0, yRange = 1;
+
         // Render chart SVG
         if (!hasData) {
           chartViewport.innerHTML = `<div class="chart-empty">Log weight to see history chart.</div>`;
@@ -2461,9 +2619,9 @@
           const minWeight = Math.min(...weights);
           const maxWeight = Math.max(...weights);
           const yPadding = Math.max(1, (maxWeight - minWeight) * 0.15);
-          const minY = Math.max(0, minWeight - yPadding);
-          const maxY = maxWeight + yPadding;
-          const yRange = maxY - minY || 1;
+          minY = Math.max(0, minWeight - yPadding);
+          maxY = maxWeight + yPadding;
+          yRange = maxY - minY || 1;
 
           // Coordinate projection
           const coordinates = chartData.map((d, index) => {
@@ -2479,22 +2637,21 @@
           // Draw SVG
           let gridLinesHtml = [0, 0.25, 0.5, 0.75, 1].map(ratio => {
             const y = paddingY + ratio * (svgHeight - 2 * paddingY);
-            return `<line class="chart-grid-line" x1="${paddingX}" y1="${y}" x2="${svgWidth - paddingX}" y2="${y}" />`;
+            const val = maxY - ratio * yRange;
+            return `
+              <line class="chart-grid-line" x1="${paddingX}" y1="${y}" x2="${svgWidth - paddingX}" y2="${y}" />
+              <text class="chart-axis-label" x="${paddingX - 8}" y="${y}" text-anchor="end" dominant-baseline="central" font-size="10" fill="var(--text-muted)">${val.toFixed(1)}</text>
+            `;
           }).join('');
 
-          let rawPath = '';
           let avgPath = '';
           let areaPath = '';
           
           if (hasLine) {
-            rawPath = coordinates.reduce((path, p, i) => {
-              return i === 0 ? `M ${p.x} ${p.yRaw}` : `${path} L ${p.x} ${p.yRaw}`;
-            }, '');
-            areaPath = `${rawPath} L ${coordinates[coordinates.length - 1].x} ${svgHeight - paddingY} L ${coordinates[0].x} ${svgHeight - paddingY} Z`;
-            
             avgPath = coordinates.reduce((path, p, i) => {
               return i === 0 ? `M ${p.x} ${p.yAvg}` : `${path} L ${p.x} ${p.yAvg}`;
             }, '');
+            areaPath = `${avgPath} L ${coordinates[coordinates.length - 1].x} ${svgHeight - paddingY} L ${coordinates[0].x} ${svgHeight - paddingY} Z`;
           }
 
           // Active tooltip select
@@ -2506,8 +2663,8 @@
             const isActive = activePt && activePt.index === p.index;
             pointsHtml += `
               <g onclick="selectWeightPoint(${p.index})">
-                <circle cx="${p.x}" cy="${p.yRaw}" r="16" fill="transparent" style="cursor:pointer;" />
-                <circle cx="${p.x}" cy="${p.yRaw}" r="${isActive ? 5.5 : 3.5}" 
+                <circle cx="${p.x}" cy="${p.yAvg}" r="16" fill="transparent" style="cursor:pointer;" />
+                <circle cx="${p.x}" cy="${p.yAvg}" r="${isActive ? 5.5 : 3.5}" 
                         fill="${isActive ? 'var(--text-primary)' : 'var(--color-weight)'}" 
                         stroke="var(--bg-card)" stroke-width="1.5" 
                         style="cursor:pointer; transition: all 0.15s ease;" />
@@ -2533,8 +2690,7 @@
               </defs>
               ${gridLinesHtml}
               ${hasLine ? `<path d="${areaPath}" fill="url(#chartAreaGradient)" />` : ''}
-              ${hasLine ? `<path d="${rawPath}" fill="none" stroke="var(--color-weight)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />` : ''}
-              ${hasLine ? `<path d="${avgPath}" fill="none" stroke="#a855f7" stroke-width="1.8" stroke-dasharray="4 4" stroke-linecap="round" stroke-linejoin="round" />` : ''}
+              ${hasLine ? `<path d="${avgPath}" fill="none" stroke="var(--color-weight)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />` : ''}
               ${cursorLineHtml}
               ${pointsHtml}
             </svg>
@@ -2549,7 +2705,7 @@
             document.getElementById('tooltip-avg').innerText = activePt.data.avg;
             
             tooltip.style.left = `${(activePt.x / svgWidth) * 100}%`;
-            tooltip.style.top = `${(activePt.yRaw / svgHeight) * 100}%`;
+            tooltip.style.top = `${(activePt.yAvg / svgHeight) * 100}%`;
             tooltip.classList.add('active');
           } else {
             tooltip.classList.remove('active');
@@ -2580,10 +2736,10 @@
             const diff = entry.weight - prevEntry.weight;
             if (diff > 0) {
               diffText = `+${diff.toFixed(1)}`;
-              diffColor = 'var(--color-danger)';
+              diffColor = 'var(--color-calories)';
             } else if (diff < 0) {
               diffText = `${diff.toFixed(1)}`;
-              diffColor = 'var(--color-calories)';
+              diffColor = 'var(--color-danger)';
             } else {
               diffText = '0.0';
               diffColor = 'var(--text-muted)';
@@ -2591,7 +2747,7 @@
           }
 
           logHtml += `
-            <div class="weight-log-item">
+            <div class="weight-log-item" onclick="openWeightModal('${entry.id}')" style="cursor:pointer;">
               <div class="item-left">
                 <span class="item-title">${entry.weight}</span>
                 <span class="item-subtitle">${formatDateLabel(entry.date)}</span>
@@ -2600,7 +2756,7 @@
                 <div class="item-stats" style="margin-right: 8px;">
                   ${diffText ? `<span style="font-size: 14px; font-weight: 700; color: ${diffColor};">${diffText}</span>` : ''}
                 </div>
-                <button class="btn-sm-icon" onclick="deleteWeight('${entry.id}')" aria-label="Delete entry">
+                <button class="btn-sm-icon" onclick="event.stopPropagation(); deleteWeight('${entry.id}')" aria-label="Delete entry">
                   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width: 16px; height: 16px;">
                     <path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0M4.5 12h15" />
                   </svg>
