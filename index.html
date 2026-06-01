@@ -24,8 +24,10 @@
         
         --color-calories: #10b981; /* Emerald Green */
         --color-calories-glow: rgba(16, 185, 129, 0.15);
+        --color-calories-dark: #065f46; /* Emerald-800 */
         --color-protein: #f59e0b; /* Amber Orange */
         --color-protein-glow: rgba(245, 158, 11, 0.15);
+        --color-protein-dark: #b45309; /* Amber-700 */
         --color-weight: #0ea5e9; /* Sky Blue */
         --color-weight-glow: rgba(14, 165, 233, 0.15);
         --color-workout: #f97316; /* Orange */
@@ -1159,6 +1161,100 @@
         outline: none;
         border-color: var(--color-weight);
       }
+
+      /* Preset meals toggle button (next to Log Food) */
+      .preset-toggle-btn {
+        width: 50px;
+        flex-shrink: 0;
+        border-radius: var(--border-radius-md);
+        border: 1px solid var(--border-color);
+        background: var(--bg-tertiary);
+        color: var(--text-muted);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: var(--transition-fast);
+      }
+      .preset-toggle-btn:hover {
+        color: var(--text-secondary);
+        border-color: rgba(255, 255, 255, 0.15);
+      }
+      .preset-toggle-btn:active {
+        transform: scale(0.96);
+      }
+
+      /* Preset meals pop-up panel */
+      .preset-list {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        margin-top: 8px;
+        margin-bottom: 8px;
+        max-height: 45vh;
+        overflow-y: auto;
+        padding-right: 2px;
+      }
+      .preset-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 14px 16px;
+        background-color: var(--bg-primary);
+        border: 1px solid var(--border-color);
+        border-radius: var(--border-radius-md);
+        cursor: pointer;
+        transition: var(--transition-fast);
+      }
+      .preset-item:hover {
+        border-color: rgba(255, 255, 255, 0.15);
+        background-color: rgba(255, 255, 255, 0.02);
+      }
+      .preset-item:active {
+        transform: scale(0.99);
+      }
+      .preset-info {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        flex: 1;
+        min-width: 0;
+      }
+      .preset-name {
+        font-size: 16px;
+        font-weight: 600;
+        color: var(--text-primary);
+      }
+      .preset-meta {
+        font-size: 12px;
+        color: var(--text-muted);
+      }
+      .preset-actions {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-shrink: 0;
+      }
+
+      /* Milestone celebration animations */
+      @keyframes goal-burst {
+        0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+        50% { transform: scale(1.08); box-shadow: 0 0 15px 5px rgba(16, 185, 129, 0.4); }
+        100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+      }
+      @keyframes ideal-burst {
+        0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.7); }
+        30% { transform: scale(1.15); box-shadow: 0 0 25px 10px rgba(255, 215, 0, 0.5); }
+        50% { transform: scale(1.15) rotate(2deg); }
+        70% { transform: scale(1.15) rotate(-2deg); }
+        100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(245, 158, 11, 0); }
+      }
+      .hit-goal-animate {
+        animation: goal-burst 0.7s ease-out;
+      }
+      .hit-ideal-animate {
+        animation: ideal-burst 0.9s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      }
     </style>
   </head>
   <body>
@@ -1181,73 +1277,27 @@
         
         <!-- Tab 1: Food Consumption -->
         <section id="panel-food" class="tab-panel active">
-          <!-- Food Dashboard Circular Progress Rings -->
-          <div class="card">
-            <div class="card-title">
-              <span>Today's Progress</span>
-              <span id="food-goals-label" style="font-size: 13px; color: var(--text-secondary); font-weight: 400;">Goals: 3300 kcal / 170g protein</span>
-            </div>
-            
-            <div class="dashboard-progress-grid">
-              <!-- Calories Ring -->
-              <div class="progress-circular-card">
-                <div class="progress-circle-wrapper">
-                  <svg class="progress-circle-svg">
-                    <circle class="progress-circle-bg" cx="50" cy="50" r="40"></circle>
-                    <circle id="ring-calories" class="progress-circle-bar" cx="50" cy="50" r="40" stroke="var(--color-calories)" stroke-dasharray="251.32" stroke-dashoffset="251.32"></circle>
-                  </svg>
-                  <div class="progress-circle-value">
-                    <span id="val-calories" class="progress-val-num" style="color: var(--color-calories);">0</span>
-                    <span class="progress-val-label">kcal</span>
-                  </div>
-                </div>
-                <div class="progress-goal-text" style="color: var(--text-secondary);">
-                  Calories
-                  <div id="remaining-calories" style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">3300 remaining</div>
-                </div>
-              </div>
-
-              <!-- Protein Ring -->
-              <div class="progress-circular-card">
-                <div class="progress-circle-wrapper">
-                  <svg class="progress-circle-svg">
-                    <circle class="progress-circle-bg" cx="50" cy="50" r="40"></circle>
-                    <circle id="ring-protein" class="progress-circle-bar" cx="50" cy="50" r="40" stroke="var(--color-protein)" stroke-dasharray="251.32" stroke-dashoffset="251.32"></circle>
-                  </svg>
-                  <div class="progress-circle-value">
-                    <span id="val-protein" class="progress-val-num" style="color: var(--color-protein);">0g</span>
-                    <span class="progress-val-label">protein</span>
-                  </div>
-                </div>
-                <div class="progress-goal-text" style="color: var(--text-secondary);">
-                  Protein
-                  <div id="remaining-protein" style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">170g remaining</div>
-                </div>
-              </div>
-            </div>
-
-            <button class="btn btn-food" onclick="openFoodModal()">
+          <!-- Top action bar: Log Food + Presets -->
+          <div style="display: flex; gap: 12px; align-items: stretch;">
+            <button class="btn btn-food" style="flex: 1;" onclick="openFoodModal()">
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" style="width: 20px; height: 20px;">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
               </svg>
               Log Food
             </button>
+            <button class="preset-toggle-btn" onclick="openPresetPanel()" aria-label="Preset meals">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width: 22px; height: 22px;">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 6.75h12M8.25 12h12M8.25 17.25h12M3.75 6.75h.007v.008H3.75V6.75Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0ZM3.75 12h.007v.008H3.75V12Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm-.375 5.25h.007v.008H3.75v-.008Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Z" />
+              </svg>
+            </button>
           </div>
 
           <!-- Grouped Food Entries List -->
-          <div class="list-container">
-            <h2 style="font-size: 20px; font-weight: 700; margin: 8px 0 4px 4px;">Logs History</h2>
+          <div class="list-container" style="margin-top: 16px;">
             <div id="food-history-root">
               <!-- Injected by JS -->
             </div>
           </div>
-
-          <!-- Food FAB -->
-          <button class="btn-primary-fab food-fab" onclick="openFoodModal()" aria-label="Add food entry">
-            <svg xmlns="http://www.w3.org/2000/svg" class="btn-icon-xl" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-            </svg>
-          </button>
         </section>
 
         <!-- Tab 2: Weight Tracker -->
@@ -1414,19 +1464,37 @@
               <!-- Calorie Goal -->
               <div class="settings-row">
                 <div class="settings-label-group">
-                  <span class="settings-row-title">Daily Calorie Goal</span>
-                  <span class="settings-row-desc">Target daily energy intake in kcal</span>
+                  <span class="settings-row-title">Calorie Goal</span>
+                  <span class="settings-row-desc">Where the outer ring fills to (kcal)</span>
                 </div>
-                <input type="number" id="setting-calorie-goal" class="settings-input-sm" min="1" value="3300" onchange="updateCalorieGoal(this.value)" />
+                <input type="number" id="setting-calorie-goal" class="settings-input-sm" min="1" value="3300" inputmode="numeric" onchange="updateCalorieGoal(this.value)" />
+              </div>
+
+              <!-- Ideal Calorie Goal -->
+              <div class="settings-row">
+                <div class="settings-label-group">
+                  <span class="settings-row-title">Ideal Calorie Goal</span>
+                  <span class="settings-row-desc">Where the inner pill fills to (kcal)</span>
+                </div>
+                <input type="number" id="setting-ideal-calorie-goal" class="settings-input-sm" min="1" value="4000" inputmode="numeric" onchange="updateIdealCalorieGoal(this.value)" />
               </div>
 
               <!-- Protein Goal -->
               <div class="settings-row">
                 <div class="settings-label-group">
-                  <span class="settings-row-title">Daily Protein Goal</span>
-                  <span class="settings-row-desc">Target daily protein intake in grams</span>
+                  <span class="settings-row-title">Protein Goal</span>
+                  <span class="settings-row-desc">Where the outer ring fills to (g)</span>
                 </div>
-                <input type="number" id="setting-protein-goal" class="settings-input-sm" min="1" value="170" onchange="updateProteinGoal(this.value)" />
+                <input type="number" id="setting-protein-goal" class="settings-input-sm" min="1" value="170" inputmode="numeric" onchange="updateProteinGoal(this.value)" />
+              </div>
+
+              <!-- Ideal Protein Goal -->
+              <div class="settings-row">
+                <div class="settings-label-group">
+                  <span class="settings-row-title">Ideal Protein Goal</span>
+                  <span class="settings-row-desc">Where the inner pill fills to (g)</span>
+                </div>
+                <input type="number" id="setting-ideal-protein-goal" class="settings-input-sm" min="1" value="200" inputmode="numeric" onchange="updateIdealProteinGoal(this.value)" />
               </div>
 
               <!-- Rolling Avg days -->
@@ -1563,18 +1631,18 @@
           <form onsubmit="submitFoodForm(event)" style="display: flex; flex-direction: column; gap: 16px;">
             <div class="form-group">
               <label class="form-label">Food Name</label>
-              <input type="text" id="food-input-name" class="form-input form-input-food" placeholder="e.g. Protein Shake, Chicken Breast" required />
+              <input type="text" id="food-input-name" class="form-input form-input-food" placeholder="e.g. Protein Shake, Chicken Breast" required autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
             </div>
 
             <div class="form-row">
               <div class="form-group">
                 <label class="form-label">Calories (kcal)</label>
-                <input type="number" id="food-input-calories" class="form-input form-input-food" placeholder="0" min="0" required />
+                <input type="number" id="food-input-calories" class="form-input form-input-food" placeholder="0" min="0" required inputmode="numeric" pattern="[0-9]*" autocomplete="off" />
               </div>
 
               <div class="form-group">
                 <label class="form-label">Protein (g)</label>
-                <input type="number" id="food-input-protein" class="form-input form-input-food" placeholder="0" min="0" required />
+                <input type="number" id="food-input-protein" class="form-input form-input-food" placeholder="0" min="0" required inputmode="numeric" pattern="[0-9]*" autocomplete="off" />
               </div>
             </div>
 
@@ -1587,6 +1655,51 @@
               Add Entry
             </button>
           </form>
+        </div>
+      </div>
+
+      <!-- Slide-Up Modal: Preset Meals -->
+      <div id="modal-presets" class="modal-overlay" onclick="closePresetPanel()">
+        <div class="modal-content" onclick="event.stopPropagation()" style="max-height: 80vh; display: flex; flex-direction: column;">
+          <div class="modal-header">
+            <h3 class="modal-title">Preset Meals</h3>
+            <button class="modal-close-btn" onclick="closePresetPanel()">✕</button>
+          </div>
+
+          <!-- Preset list (injected by JS) -->
+          <div id="preset-list-root">
+            <!-- Injected by JS -->
+          </div>
+
+          <!-- Inline add/edit form (hidden by default) -->
+          <form id="preset-form" onsubmit="submitPresetForm(event)" style="display: none; flex-direction: column; gap: 12px; border-top: 1px solid var(--border-color); padding-top: 16px; margin-top: 4px;">
+            <div class="form-group">
+              <label class="form-label">Preset Name</label>
+              <input type="text" id="preset-input-name" class="form-input form-input-food" placeholder="e.g. Shake" required autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">Calories</label>
+                <input type="number" id="preset-input-calories" class="form-input form-input-food" placeholder="0" min="0" required inputmode="numeric" pattern="[0-9]*" autocomplete="off" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Protein (g)</label>
+                <input type="number" id="preset-input-protein" class="form-input form-input-food" placeholder="0" min="0" required inputmode="numeric" pattern="[0-9]*" autocomplete="off" />
+              </div>
+            </div>
+            <div style="display: flex; gap: 10px;">
+              <button type="button" class="btn btn-secondary" style="flex: 1; padding: 10px;" onclick="hidePresetForm()">Cancel</button>
+              <button type="submit" class="btn btn-food" id="preset-form-submit" style="flex: 1; padding: 10px;">Add Preset</button>
+            </div>
+          </form>
+
+          <!-- New Preset button (hidden while form open) -->
+          <button id="preset-new-btn" class="btn btn-secondary" style="margin-top: 4px;" onclick="showPresetForm()">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" style="width: 18px; height: 18px;">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+            </svg>
+            New Preset
+          </button>
         </div>
       </div>
 
@@ -1677,8 +1790,16 @@
       const state = {
         activeTab: 'food',
         calorieGoal: 3300,
+        idealCalorieGoal: 4000,
         proteinGoal: 170,
+        idealProteinGoal: 200,
         rollingAvgDays: 5,
+        presets: [
+          { id: 'p1', name: 'Shake', calories: 230, protein: 42, clicks: 0 },
+          { id: 'p2', name: 'Chicken & Rice', calories: 650, protein: 50, clicks: 0 }
+        ],
+        editingPresetId: null,
+        prevTodayTotals: null,
         foodEntries: [],
         weightEntries: [],
         workoutEntries: [],
@@ -1723,6 +1844,13 @@
       };
 
       // --- Helper Utilities ---
+      const escapeHtml = (str) => String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+
       const getLocalDateString = (d = new Date()) => {
         const year = d.getFullYear();
         const month = String(d.getMonth() + 1).padStart(2, '0');
@@ -1773,49 +1901,124 @@
         return d >= monday && d <= sunday;
       };
 
-      const renderPillRing = (value, goal, unit, color, tintColor, width) => {
-        const percent = Math.min(value / goal, 1);
+      // Dual-goal pill: outer ring fills to "Goal", inner pill fills (left->right)
+      // proportionally from Goal to "Ideal". At Ideal the ring darkens and a star appears.
+      const renderPillRing = (value, goal, idealGoal, unit, color, darkColor, tintColor, width, uniqueId) => {
         const height = 36;
         const rOuter = 17;
         const rInner = 14;
-        const hasHit = value >= goal;
-        
-        const offset = 100 - percent * 100;
-        const textContent = hasHit 
-          ? (unit === 'g' ? `✓ ${value}g` : `✓ ${value} kcal`) 
-          : (unit === 'g' ? `${value}g` : `${value} kcal`);
-        const textColor = hasHit ? '#ffffff' : color;
-        const pillFill = hasHit ? color : tintColor;
+        const innerW = width - 8;
+        const innerH = height - 8;
+
+        const goalPercent = Math.min(value / goal, 1);
+        const hitGoal = value >= goal;
+        const hitIdeal = value >= idealGoal;
+
+        const idealRange = Math.max(idealGoal - goal, 1);
+        const idealProgress = hitIdeal ? 1 : (hitGoal ? Math.min((value - goal) / idealRange, 1) : 0);
+
+        const ringColor = hitIdeal ? darkColor : color;
+        const ringOffset = 100 - goalPercent * 100;
+        const pillBg = hitIdeal ? darkColor : tintColor;
+
+        const icon = hitIdeal ? '★ ' : (hitGoal ? '✓ ' : '');
+        const label = unit === 'g' ? `${value}g` : `${value} kcal`;
+        const textContent = `${icon}${label}`;
+        const textColor = hitGoal ? '#ffffff' : color;
+
+        // Inner "ideal" fill overlay, only between Goal and Ideal
+        const idealFill = (hitGoal && !hitIdeal && idealProgress > 0) ? `
+            <defs><clipPath id="pclip-${uniqueId}"><rect x="4" y="4" width="${innerW}" height="${innerH}" rx="${rInner}" ry="${rInner}" /></clipPath></defs>
+            <g clip-path="url(#pclip-${uniqueId})">
+              <rect id="idealfill-${uniqueId}" x="4" y="4" width="${innerW}" height="${innerH}" fill="${darkColor}"
+                    style="transform-origin: 4px ${height / 2}px; transform: scaleX(${idealProgress}); transition: transform 0.8s cubic-bezier(0.4,0,0.2,1);" />
+            </g>` : '';
 
         return `
-          <svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" style="overflow: visible; display: block;">
-            <!-- Outer progress track -->
-            <rect x="1" y="1" width="${width - 2}" height="${height - 2}" rx="${rOuter}" ry="${rOuter}" 
-                  fill="none" stroke="rgba(255, 255, 255, 0.05)" stroke-width="1.5" />
-            <!-- Outer progress bar -->
-            <rect x="1" y="1" width="${width - 2}" height="${height - 2}" rx="${rOuter}" ry="${rOuter}" 
-                  fill="none" stroke="${color}" stroke-width="1.5" stroke-linecap="round"
-                  pathLength="100" stroke-dasharray="100" stroke-dashoffset="${offset}" 
-                  style="transition: stroke-dashoffset 0.4s ease;" />
-            <!-- Inner pill -->
-            <rect x="4" y="4" width="${width - 8}" height="${height - 8}" rx="${rInner}" ry="${rInner}" 
-                  fill="${pillFill}" style="transition: fill 0.3s ease;" />
-            <!-- Inner text -->
-            <text x="50%" y="50%" dominant-baseline="central" text-anchor="middle" 
-                  fill="${textColor}" font-size="13" font-weight="700" 
-                  style="font-family: var(--sans-font); transition: fill 0.3s ease;">${textContent}</text>
-          </svg>
+          <span id="pill-${uniqueId}" style="display: inline-flex; border-radius: ${rOuter}px;">
+            <svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" style="overflow: visible; display: block;">
+              <!-- Outer progress track -->
+              <rect x="1" y="1" width="${width - 2}" height="${height - 2}" rx="${rOuter}" ry="${rOuter}"
+                    fill="none" stroke="rgba(255, 255, 255, 0.05)" stroke-width="1.5" />
+              <!-- Outer progress bar (fills to Goal) -->
+              <rect id="ring-${uniqueId}" x="1" y="1" width="${width - 2}" height="${height - 2}" rx="${rOuter}" ry="${rOuter}"
+                    fill="none" stroke="${ringColor}" stroke-width="1.5" stroke-linecap="round"
+                    pathLength="100" stroke-dasharray="100" stroke-dashoffset="${ringOffset}"
+                    style="transition: stroke-dashoffset 0.8s cubic-bezier(0.4,0,0.2,1), stroke 0.4s ease;" />
+              <!-- Inner pill base -->
+              <rect x="4" y="4" width="${innerW}" height="${innerH}" rx="${rInner}" ry="${rInner}"
+                    fill="${pillBg}" style="transition: fill 0.4s ease;" />
+              ${idealFill}
+              <!-- Inner text -->
+              <text x="50%" y="50%" dominant-baseline="central" text-anchor="middle"
+                    fill="${textColor}" font-size="13" font-weight="700"
+                    style="font-family: var(--sans-font); transition: fill 0.3s ease;">${textContent}</text>
+            </svg>
+          </span>
         `;
+      };
+
+      // Animate today's pills from their previous totals to the current ones.
+      // Because the history list is rebuilt via innerHTML, the SVG starts at its
+      // final value; we replay the transition with the Web Animations API so the
+      // ring visibly grows instead of snapping.
+      const animatePill = (uniqueId, prevValue, curValue, goal, idealGoal) => {
+        const ring = document.getElementById(`ring-${uniqueId}`);
+        if (ring) {
+          const prevOffset = 100 - Math.min(prevValue / goal, 1) * 100;
+          const curOffset = 100 - Math.min(curValue / goal, 1) * 100;
+          if (Math.abs(prevOffset - curOffset) > 0.05) {
+            ring.animate(
+              [{ strokeDashoffset: prevOffset }, { strokeDashoffset: curOffset }],
+              { duration: 800, easing: 'cubic-bezier(0.4, 0, 0.2, 1)' }
+            );
+          }
+        }
+        const fill = document.getElementById(`idealfill-${uniqueId}`);
+        if (fill) {
+          const idealRange = Math.max(idealGoal - goal, 1);
+          const prevP = prevValue >= goal ? Math.min((prevValue - goal) / idealRange, 1) : 0;
+          const curP = (curValue >= idealGoal) ? 1 : (curValue >= goal ? Math.min((curValue - goal) / idealRange, 1) : 0);
+          if (Math.abs(prevP - curP) > 0.005) {
+            fill.animate(
+              [{ transform: `scaleX(${prevP})` }, { transform: `scaleX(${curP})` }],
+              { duration: 800, easing: 'cubic-bezier(0.4, 0, 0.2, 1)' }
+            );
+          }
+        }
+      };
+
+      // Fire a celebratory burst on a pill when a milestone is freshly crossed.
+      const burstPill = (uniqueId, type) => {
+        const el = document.getElementById(`pill-${uniqueId}`);
+        if (!el) return;
+        const cls = type === 'ideal' ? 'hit-ideal-animate' : 'hit-goal-animate';
+        el.classList.remove('hit-goal-animate', 'hit-ideal-animate');
+        // Force reflow so the animation can re-trigger.
+        void el.offsetWidth;
+        el.classList.add(cls);
+        setTimeout(() => el.classList.remove(cls), type === 'ideal' ? 950 : 750);
       };
 
       // --- Persistence layer ---
       const loadStateFromStorage = () => {
         const cal = localStorage.getItem('health_tracker_calorie_goal');
         if (cal) state.calorieGoal = parseInt(cal);
-        
+
+        const idealCal = localStorage.getItem('health_tracker_ideal_calorie_goal');
+        if (idealCal) state.idealCalorieGoal = parseInt(idealCal);
+
         const pro = localStorage.getItem('health_tracker_protein_goal');
         if (pro) state.proteinGoal = parseInt(pro);
-        
+
+        const idealPro = localStorage.getItem('health_tracker_ideal_protein_goal');
+        if (idealPro) state.idealProteinGoal = parseInt(idealPro);
+
+        const presets = localStorage.getItem('health_tracker_presets');
+        if (presets) {
+          try { state.presets = JSON.parse(presets); } catch (e) { /* keep defaults */ }
+        }
+
         const roll = localStorage.getItem('health_tracker_rolling_avg_days');
         if (roll) state.rollingAvgDays = parseInt(roll);
         
@@ -1837,7 +2040,10 @@
 
       const saveStateToStorage = (shouldPush = true) => {
         localStorage.setItem('health_tracker_calorie_goal', state.calorieGoal.toString());
+        localStorage.setItem('health_tracker_ideal_calorie_goal', state.idealCalorieGoal.toString());
         localStorage.setItem('health_tracker_protein_goal', state.proteinGoal.toString());
+        localStorage.setItem('health_tracker_ideal_protein_goal', state.idealProteinGoal.toString());
+        localStorage.setItem('health_tracker_presets', JSON.stringify(state.presets));
         localStorage.setItem('health_tracker_rolling_avg_days', state.rollingAvgDays.toString());
         localStorage.setItem('health_tracker_food', JSON.stringify(state.foodEntries));
         localStorage.setItem('health_tracker_weight', JSON.stringify(state.weightEntries));
@@ -2057,9 +2263,158 @@
         render();
       };
 
+      const updateIdealCalorieGoal = (val) => {
+        state.idealCalorieGoal = Math.max(1, parseInt(val) || 4000);
+        saveStateToStorage();
+        render();
+      };
+
       const updateProteinGoal = (val) => {
         state.proteinGoal = Math.max(1, parseInt(val) || 170);
         saveStateToStorage();
+        render();
+      };
+
+      const updateIdealProteinGoal = (val) => {
+        state.idealProteinGoal = Math.max(1, parseInt(val) || 200);
+        saveStateToStorage();
+        render();
+      };
+
+      // --- Preset Meals ---
+      const openPresetPanel = () => {
+        hidePresetForm();
+        renderPresetList();
+        document.getElementById('modal-presets').classList.add('active');
+      };
+
+      const closePresetPanel = () => {
+        document.getElementById('modal-presets').classList.remove('active');
+        hidePresetForm();
+      };
+
+      const renderPresetList = () => {
+        const root = document.getElementById('preset-list-root');
+        if (!root) return;
+        const sorted = [...state.presets].sort((a, b) => (b.clicks || 0) - (a.clicks || 0));
+
+        if (sorted.length === 0) {
+          root.innerHTML = `
+            <div style="text-align: center; padding: 24px 0; color: var(--text-muted);">
+              <p>No presets yet.</p>
+              <p style="font-size: 13px; margin-top: 4px;">Create one below to log meals faster!</p>
+            </div>`;
+          return;
+        }
+
+        const editIcon = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width: 15px; height: 15px;"><path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Z" /></svg>`;
+        const delIcon = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width: 15px; height: 15px;"><path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" /></svg>`;
+
+        let html = '<div class="preset-list">';
+        sorted.forEach(p => {
+          const usedTxt = (p.clicks > 0) ? ` <span style="opacity: 0.6;">· used ${p.clicks}×</span>` : '';
+          html += `
+            <div class="preset-item" onclick="logPreset('${p.id}')">
+              <div class="preset-info">
+                <span class="preset-name">${escapeHtml(p.name)}</span>
+                <span class="preset-meta">${p.calories} kcal · ${p.protein}g protein${usedTxt}</span>
+              </div>
+              <div class="preset-actions" onclick="event.stopPropagation()">
+                <button class="btn-sm-icon" style="color: var(--text-muted);" aria-label="Edit preset" onclick="startEditPreset('${p.id}')">${editIcon}</button>
+                <button class="btn-sm-icon" aria-label="Delete preset" onclick="deletePreset('${p.id}')">${delIcon}</button>
+              </div>
+            </div>`;
+        });
+        html += '</div>';
+        root.innerHTML = html;
+      };
+
+      const showPresetForm = (editId = null) => {
+        const form = document.getElementById('preset-form');
+        const newBtn = document.getElementById('preset-new-btn');
+        const submitBtn = document.getElementById('preset-form-submit');
+        const nameInput = document.getElementById('preset-input-name');
+        const calInput = document.getElementById('preset-input-calories');
+        const proInput = document.getElementById('preset-input-protein');
+
+        if (editId) {
+          const p = state.presets.find(x => x.id === editId);
+          if (p) {
+            state.editingPresetId = editId;
+            nameInput.value = p.name;
+            calInput.value = p.calories;
+            proInput.value = p.protein;
+            submitBtn.innerText = 'Save Changes';
+          }
+        } else {
+          state.editingPresetId = null;
+          nameInput.value = '';
+          calInput.value = '';
+          proInput.value = '';
+          submitBtn.innerText = 'Add Preset';
+        }
+
+        form.style.display = 'flex';
+        newBtn.style.display = 'none';
+        nameInput.focus();
+      };
+
+      const hidePresetForm = () => {
+        const form = document.getElementById('preset-form');
+        const newBtn = document.getElementById('preset-new-btn');
+        if (form) form.style.display = 'none';
+        if (newBtn) newBtn.style.display = 'flex';
+        state.editingPresetId = null;
+      };
+
+      const startEditPreset = (id) => {
+        showPresetForm(id);
+      };
+
+      const submitPresetForm = (e) => {
+        e.preventDefault();
+        const name = document.getElementById('preset-input-name').value.trim();
+        const calories = parseInt(document.getElementById('preset-input-calories').value) || 0;
+        const protein = parseInt(document.getElementById('preset-input-protein').value) || 0;
+        if (!name) return;
+
+        if (state.editingPresetId) {
+          const idx = state.presets.findIndex(p => p.id === state.editingPresetId);
+          if (idx !== -1) {
+            state.presets[idx] = { ...state.presets[idx], name, calories, protein };
+          }
+        } else {
+          state.presets.unshift({ id: Date.now().toString(), name, calories, protein, clicks: 0 });
+        }
+
+        saveStateToStorage(false); // presets are local-only; no cloud push needed
+        hidePresetForm();
+        renderPresetList();
+      };
+
+      const deletePreset = (id) => {
+        if (confirm('Delete this preset?')) {
+          state.presets = state.presets.filter(p => p.id !== id);
+          saveStateToStorage(false);
+          renderPresetList();
+        }
+      };
+
+      const logPreset = (id) => {
+        const p = state.presets.find(x => x.id === id);
+        if (!p) return;
+        state.foodEntries.unshift({
+          id: Date.now().toString(),
+          name: p.name,
+          calories: p.calories,
+          protein: p.protein,
+          date: getLocalDateString(),
+          timestamp: Date.now()
+        });
+        const idx = state.presets.findIndex(x => x.id === id);
+        if (idx !== -1) state.presets[idx].clicks = (state.presets[idx].clicks || 0) + 1;
+        saveStateToStorage();
+        closePresetPanel();
         render();
       };
 
@@ -2158,7 +2513,9 @@
 
             // Merge settings
             if (data.calorieGoal) state.calorieGoal = data.calorieGoal;
+            if (data.idealCalorieGoal) state.idealCalorieGoal = data.idealCalorieGoal;
             if (data.proteinGoal) state.proteinGoal = data.proteinGoal;
+            if (data.idealProteinGoal) state.idealProteinGoal = data.idealProteinGoal;
             if (data.rollingAvgDays) state.rollingAvgDays = data.rollingAvgDays;
             if (data.workoutGoals) state.workoutGoals = { ...state.workoutGoals, ...data.workoutGoals };
 
@@ -2206,10 +2563,14 @@
 
             // Update inputs in settings panel
             const calInput = document.getElementById('setting-calorie-goal');
+            const idealCalInput = document.getElementById('setting-ideal-calorie-goal');
             const proInput = document.getElementById('setting-protein-goal');
+            const idealProInput = document.getElementById('setting-ideal-protein-goal');
             const rollInput = document.getElementById('setting-rolling-avg');
             if (calInput) calInput.value = state.calorieGoal;
+            if (idealCalInput) idealCalInput.value = state.idealCalorieGoal;
             if (proInput) proInput.value = state.proteinGoal;
+            if (idealProInput) idealProInput.value = state.idealProteinGoal;
             if (rollInput) rollInput.value = state.rollingAvgDays;
 
             updateSyncUI('success');
@@ -2217,7 +2578,9 @@
           } else if (direction === 'push') {
             const payload = {
               calorieGoal: state.calorieGoal,
+              idealCalorieGoal: state.idealCalorieGoal,
               proteinGoal: state.proteinGoal,
+              idealProteinGoal: state.idealProteinGoal,
               rollingAvgDays: state.rollingAvgDays,
               workoutGoals: state.workoutGoals,
               foodEntries: state.foodEntries,
@@ -2306,8 +2669,11 @@
       const exportDataToClipboard = () => {
         const dataStr = JSON.stringify({
           calorieGoal: state.calorieGoal,
+          idealCalorieGoal: state.idealCalorieGoal,
           proteinGoal: state.proteinGoal,
+          idealProteinGoal: state.idealProteinGoal,
           rollingAvgDays: state.rollingAvgDays,
+          presets: state.presets,
           foodEntries: state.foodEntries,
           weightEntries: state.weightEntries,
           workoutGoals: state.workoutGoals,
@@ -2344,8 +2710,11 @@
           }
           
           state.calorieGoal = Number(parsed.calorieGoal) || 3300;
+          state.idealCalorieGoal = Number(parsed.idealCalorieGoal) || 4000;
           state.proteinGoal = Number(parsed.proteinGoal) || 170;
+          state.idealProteinGoal = Number(parsed.idealProteinGoal) || 200;
           state.rollingAvgDays = Number(parsed.rollingAvgDays) || 5;
+          if (Array.isArray(parsed.presets)) state.presets = parsed.presets;
           state.foodEntries = parsed.foodEntries;
           state.weightEntries = parsed.weightEntries;
           if (parsed.workoutGoals) state.workoutGoals = parsed.workoutGoals;
@@ -2366,8 +2735,16 @@
         if (confirm('Delete all food, weight logs, and reset settings? This cannot be undone.')) {
           localStorage.clear();
           state.calorieGoal = 3300;
+          state.idealCalorieGoal = 4000;
           state.proteinGoal = 170;
+          state.idealProteinGoal = 200;
           state.rollingAvgDays = 5;
+          state.presets = [
+            { id: 'p1', name: 'Shake', calories: 230, protein: 42, clicks: 0 },
+            { id: 'p2', name: 'Chicken & Rice', calories: 650, protein: 50, clicks: 0 }
+          ];
+          state.editingPresetId = null;
+          state.prevTodayTotals = null;
           state.foodEntries = [];
           state.weightEntries = [];
           state.workoutEntries = [];
@@ -2390,7 +2767,9 @@
           
           // Re-sync input fields in UI
           document.getElementById('setting-calorie-goal').value = 3300;
+          document.getElementById('setting-ideal-calorie-goal').value = 4000;
           document.getElementById('setting-protein-goal').value = 170;
+          document.getElementById('setting-ideal-protein-goal').value = 200;
           document.getElementById('setting-rolling-avg').value = 5;
           
           saveStateToStorage();
@@ -2410,18 +2789,18 @@
         } else if (state.activeTab === 'settings') {
           // Sync setting inputs
           document.getElementById('setting-calorie-goal').value = state.calorieGoal;
+          document.getElementById('setting-ideal-calorie-goal').value = state.idealCalorieGoal;
           document.getElementById('setting-protein-goal').value = state.proteinGoal;
+          document.getElementById('setting-ideal-protein-goal').value = state.idealProteinGoal;
           document.getElementById('setting-rolling-avg').value = state.rollingAvgDays;
         }
       };
 
       // 1. Food Tab Renderer
       const renderFoodTab = () => {
-        // Goals summary tag
-        document.getElementById('food-goals-label').innerText = `Goals: ${state.calorieGoal} kcal / ${state.proteinGoal}g protein`;
-
-        // Calculate Today's Totals
         const todayStr = getLocalDateString();
+
+        // Calculate Today's totals (used for milestone & animation tracking)
         const todayEntries = state.foodEntries.filter(e => (e.date || todayStr) === todayStr);
         const todayTotals = todayEntries.reduce((tot, e) => {
           tot.calories += Number(e.calories || 0);
@@ -2429,51 +2808,8 @@
           return tot;
         }, { calories: 0, protein: 0 });
 
-        // Update Calories Circle Ring
-        document.getElementById('val-calories').innerText = todayTotals.calories;
-        const calPercent = todayTotals.calories / state.calorieGoal;
-        const calOffset = ringCircumference - Math.min(calPercent, 1) * ringCircumference;
-        const ringCal = document.getElementById('ring-calories');
-        const valCal = document.getElementById('val-calories');
-        ringCal.setAttribute('stroke-dashoffset', calOffset);
-        
-        if (calPercent >= 1) {
-          ringCal.style.fill = 'var(--color-calories)';
-          valCal.style.color = '#ffffff';
-          valCal.nextElementSibling.style.color = 'rgba(255, 255, 255, 0.8)';
-        } else {
-          ringCal.style.fill = 'none';
-          valCal.style.color = 'var(--color-calories)';
-          valCal.nextElementSibling.style.color = 'var(--text-muted)';
-        }
-        
-        const remCal = state.calorieGoal - todayTotals.calories;
-        document.getElementById('remaining-calories').innerText = remCal > 0 ? `${remCal} remaining` : 'Goal reached! 🎉';
-
-        // Update Protein Circle Ring
-        document.getElementById('val-protein').innerText = `${todayTotals.protein}g`;
-        const proPercent = todayTotals.protein / state.proteinGoal;
-        const proOffset = ringCircumference - Math.min(proPercent, 1) * ringCircumference;
-        const ringPro = document.getElementById('ring-protein');
-        const valPro = document.getElementById('val-protein');
-        ringPro.setAttribute('stroke-dashoffset', proOffset);
-        
-        if (proPercent >= 1) {
-          ringPro.style.fill = 'var(--color-protein)';
-          valPro.style.color = '#ffffff';
-          valPro.nextElementSibling.style.color = 'rgba(255, 255, 255, 0.8)';
-        } else {
-          ringPro.style.fill = 'none';
-          valPro.style.color = 'var(--color-protein)';
-          valPro.nextElementSibling.style.color = 'var(--text-muted)';
-        }
-        
-        const remPro = state.proteinGoal - todayTotals.protein;
-        document.getElementById('remaining-protein').innerText = remPro > 0 ? `${remPro}g remaining` : 'Goal reached! 🎉';
-
-        // Render Grouped Food Logs List
         const historyRoot = document.getElementById('food-history-root');
-        
+
         if (state.foodEntries.length === 0) {
           historyRoot.innerHTML = `
             <div style="text-align: center; padding: 40px 20px; color: var(--text-muted); border: 1px dashed var(--border-color); border-radius: var(--border-radius-md);">
@@ -2481,10 +2817,11 @@
               <p style="font-size: 13px; margin-top: 4px;">Tap "Log Food" to get started!</p>
             </div>
           `;
+          state.prevTodayTotals = { calories: todayTotals.calories, protein: todayTotals.protein };
           return;
         }
 
-        // Group food entries
+        // Group food entries by day
         const grouped = state.foodEntries.reduce((acc, entry) => {
           const dStr = entry.date || todayStr;
           if (!acc[dStr]) acc[dStr] = [];
@@ -2492,13 +2829,11 @@
           return acc;
         }, {});
 
-        // Dates sorted descending
         const sortedDates = Object.keys(grouped).sort((a, b) => b.localeCompare(a));
 
         let html = '';
         sortedDates.forEach(dateStr => {
           const entries = grouped[dateStr];
-          // Sort items within day ascending by timestamp
           entries.sort((a, b) => a.timestamp - b.timestamp);
 
           const totals = entries.reduce((tot, e) => {
@@ -2507,9 +2842,6 @@
             return tot;
           }, { calories: 0, protein: 0 });
 
-          const isCalHit = totals.calories >= state.calorieGoal;
-          const isProHit = totals.protein >= state.proteinGoal;
-
           html += `
             <div class="food-day-card">
               <div class="food-day-header">
@@ -2517,8 +2849,8 @@
                   <span class="food-day-title">${formatDateLabel(dateStr)}</span>
                 </div>
                 <div class="group-summary" style="display: flex; gap: 8px; align-items: center;">
-                  ${renderPillRing(totals.calories, state.calorieGoal, 'kcal', 'var(--color-calories)', 'rgba(16, 185, 129, 0.08)', 125)}
-                  ${renderPillRing(totals.protein, state.proteinGoal, 'g', 'var(--color-protein)', 'rgba(245, 158, 11, 0.08)', 105)}
+                  ${renderPillRing(totals.calories, state.calorieGoal, state.idealCalorieGoal, 'kcal', 'var(--color-calories)', 'var(--color-calories-dark)', 'rgba(16, 185, 129, 0.08)', 130, 'cal-' + dateStr)}
+                  ${renderPillRing(totals.protein, state.proteinGoal, state.idealProteinGoal, 'g', 'var(--color-protein)', 'var(--color-protein-dark)', 'rgba(245, 158, 11, 0.08)', 110, 'pro-' + dateStr)}
                 </div>
               </div>
               <div class="food-day-entries">
@@ -2529,7 +2861,7 @@
             html += `
               <div class="food-entry-callout" onclick="openFoodModal('${entry.id}')">
                 <div class="item-left">
-                  <span class="item-title">${entry.name}</span>
+                  <span class="item-title">${escapeHtml(entry.name)}</span>
                   <span class="item-subtitle">${timeStr}</span>
                 </div>
                 <div class="item-right">
@@ -2553,6 +2885,22 @@
         });
 
         historyRoot.innerHTML = html;
+
+        // --- Animate & celebrate today's pills ---
+        const prev = state.prevTodayTotals;
+        if (prev && grouped[todayStr]) {
+          const calId = 'cal-' + todayStr;
+          const proId = 'pro-' + todayStr;
+          animatePill(calId, prev.calories, todayTotals.calories, state.calorieGoal, state.idealCalorieGoal);
+          animatePill(proId, prev.protein, todayTotals.protein, state.proteinGoal, state.idealProteinGoal);
+
+          if (prev.calories < state.idealCalorieGoal && todayTotals.calories >= state.idealCalorieGoal) burstPill(calId, 'ideal');
+          else if (prev.calories < state.calorieGoal && todayTotals.calories >= state.calorieGoal) burstPill(calId, 'goal');
+
+          if (prev.protein < state.idealProteinGoal && todayTotals.protein >= state.idealProteinGoal) burstPill(proId, 'ideal');
+          else if (prev.protein < state.proteinGoal && todayTotals.protein >= state.proteinGoal) burstPill(proId, 'goal');
+        }
+        state.prevTodayTotals = { calories: todayTotals.calories, protein: todayTotals.protein };
       };
 
       // 2. Weight Tab Renderer
