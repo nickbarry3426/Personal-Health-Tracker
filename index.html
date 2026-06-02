@@ -101,20 +101,25 @@
         position: sticky;
         top: 0;
         z-index: 10;
+        gap: 12px;
       }
 
       .app-title-group {
         display: flex;
         flex-direction: column;
+        min-width: 0;
       }
 
       .app-title {
-        font-size: 32px;
+        font-size: 26px;
         font-weight: 700;
         letter-spacing: -0.5px;
         background: linear-gradient(135deg, var(--text-primary) 30%, var(--text-secondary));
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
       }
 
       .app-main {
@@ -1117,6 +1122,8 @@
         border-radius: var(--border-radius-full);
         padding: 5px 12px;
         transition: all 0.3s ease;
+        white-space: nowrap;
+        flex-shrink: 0;
       }
 
       .sync-queue-dot {
@@ -1714,7 +1721,7 @@
           <form onsubmit="submitWeightForm(event)" style="display: flex; flex-direction: column; gap: 16px;">
             <div class="form-group">
               <label class="form-label">Weight</label>
-              <input type="number" step="0.1" id="weight-input-value" class="form-input" placeholder="Enter Weight" required />
+              <input type="number" step="0.1" id="weight-input-value" class="form-input" placeholder="Enter Weight" required inputmode="decimal" />
             </div>
 
             <div class="form-group">
